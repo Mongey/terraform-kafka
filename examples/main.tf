@@ -1,6 +1,4 @@
 provider "kafka" {
-  bootstrap_servers = ["localhost:9092"]
-
   ca_cert     = file("../secrets/snakeoil-ca-1.crt")
   client_cert = file("../secrets/kafkacat-ca1-signed.pem")
   client_key  = file("../secrets/kafkacat-raw-private-key.pem")

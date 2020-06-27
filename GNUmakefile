@@ -9,7 +9,7 @@ test:
 	 go test ./...
 
 testacc:
-	KAFKA_BOOTSTRAP_SERVER=localhost:9092 \
+	KAFKA_BOOTSTRAP_SERVERS=localhost:9092 \
 	KAFKA_CA_CERT=../secrets/snakeoil-ca-1.crt \
 	KAFKA_CLIENT_CERT=../secrets/kafkacat-ca1-signed.pem \
 	KAFKA_CLIENT_KEY=../secrets/kafkacat-raw-private-key-passphrase.pem \

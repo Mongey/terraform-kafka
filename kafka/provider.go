@@ -3,6 +3,8 @@ package kafka
 import (
 	"fmt"
 	"log"
+	"os"
+	"strings"
 
 	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/terraform"
@@ -14,8 +16,9 @@ func Provider() terraform.ResourceProvider {
 			"bootstrap_servers": {
 				Type:        schema.TypeList,
 				Elem:        &schema.Schema{Type: schema.TypeString},
+				DefaultFunc: envDefaultListFunc("KAFKA_BOOTSTRAP_SERVERS", nil),
 				Required:    true,
-				Description: "A list of kafka brokers",
+				Description: "A list of Kafka brokers",
 			},
 			"ca_cert_file": &schema.Schema{
 				Type:        schema.TypeString,
@@ -117,13 +120,27 @@ func Provider() terraform.ResourceProvider {
 	}
 }
 
+func envDefaultListFunc(k string, dv interface{}) schema.SchemaDefaultFunc {
+	return func() (interface{}, error) {
+		if v := os.Getenv(k); v != "" {
+			list := strings.Split(v, ",")
+			// Convert back to interface to prevent panic
+			//https://github.com/hashicorp/terraform-plugin-sdk/issues/480
+			res := []interface{}{}
+			for _, s := range list {
+				res = append(res, s)
+				log.Printf("[INFO] envSet %s", s)
+			}
+			return res, nil
+		}
+
+		return dv, nil
+	}
+}
+
 func providerConfigure(d *schema.ResourceData) (interface{}, error) {
 	brokers := dTos("bootstrap_servers", d)
-
 	log.Printf("[DEBUG] configuring provider with Brokers @ %v", brokers)
-	if brokers == nil {
-		return nil, fmt.Errorf("bootstrap_servers was not set")
-	}
 
 	saslMechanism := d.Get("sasl_mechanism").(string)
 	switch saslMechanism {
