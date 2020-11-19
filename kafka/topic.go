@@ -3,6 +3,7 @@ package kafka
 import (
 	"errors"
 	"fmt"
+	"log"
 
 	"github.com/Shopify/sarama"
 	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
@@ -64,6 +65,31 @@ func isDefault(tc *sarama.ConfigEntry, version int) bool {
 }
 
 func metaToTopic(d *schema.ResourceData, meta interface{}) Topic {
+	log.Printf("meta = %+v", meta)
+	topicName := d.Get("name").(string)
+	partitions := d.Get("partitions").(int)
+	replicationFactor := d.Get("replication_factor").(int)
+	convertedPartitions := int32(partitions)
+	convertedRF := int16(replicationFactor)
+	config := d.Get("config").(map[string]interface{})
+
+	m2 := make(map[string]*string)
+	for key, value := range config {
+		switch value := value.(type) {
+		case string:
+			m2[key] = &value
+		}
+	}
+
+	return Topic{
+		Name:              topicName,
+		Partitions:        convertedPartitions,
+		ReplicationFactor: convertedRF,
+		Config:            m2,
+	}
+}
+
+func diffToTopic(d *schema.ResourceDiff, meta interface{}) Topic {
 	topicName := d.Get("name").(string)
 	partitions := d.Get("partitions").(int)
 	replicationFactor := d.Get("replication_factor").(int)

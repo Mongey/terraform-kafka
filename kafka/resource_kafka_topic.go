@@ -3,6 +3,7 @@ package kafka
 import (
 	"fmt"
 	"log"
+	"strings"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/helper/resource"
@@ -26,7 +27,7 @@ func kafkaTopicResource() *schema.Resource {
 		Importer: &schema.ResourceImporter{
 			State: schema.ImportStatePassthrough,
 		},
-		CustomizeDiff: customPartitionDiff,
+		CustomizeDiff: customDiff,
 		Schema: map[string]*schema.Schema{
 			"name": {
 				Type:        schema.TypeString,
@@ -200,8 +201,9 @@ func topicRead(d *schema.ResourceData, meta interface{}) error {
 	return nil
 }
 
-func customPartitionDiff(diff *schema.ResourceDiff, v interface{}) error {
+func customDiff(diff *schema.ResourceDiff, meta interface{}) error {
 	log.Printf("[INFO] Checking the diff!")
+	log.Printf("[DEBUG] Resource Id = %s", diff.Id())
 	if diff.HasChange("partitions") {
 		log.Printf("[INFO] Partitions have changed!")
 		o, n := diff.GetChange("partitions")
@@ -212,7 +214,21 @@ func customPartitionDiff(diff *schema.ResourceDiff, v interface{}) error {
 			log.Printf("Partitions decreased from %d to %d. Forcing new resource", oi, ni)
 			diff.ForceNew("partitions")
 		}
-
+	}
+	if diff.HasChange("config") {
+		log.Printf("[INFO] Config has changed!")
+		if diff.Id() != "" {
+			topic := diffToTopic(diff, meta)
+			client := meta.(*LazyClient)
+			err := client.CheckConfigDiff(topic)
+			if err != nil {
+				if strings.Contains(err.Error(), "create a new topic") {
+					diff.ForceNew("config")
+				} else {
+					return err
+				}
+			}
+		}
 	}
 	return nil
 }

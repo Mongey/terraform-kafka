@@ -144,6 +144,36 @@ func (c *Client) UpdateTopic(topic Topic) error {
 	return nil
 }
 
+func (c *Client) CheckConfigDiff(topic Topic) error {
+	log.Printf("[DEBUG] Checking config")
+	broker, err := c.client.Controller()
+	if err != nil {
+		return err
+	}
+
+	r := &sarama.AlterConfigsRequest{
+		Resources:    configToResources(topic),
+		ValidateOnly: true,
+	}
+
+	res, err := broker.AlterConfigs(r)
+
+	if err != nil {
+		return err
+	}
+
+	if err == nil {
+		for _, e := range res.Resources {
+			if e.ErrorCode != int16(sarama.ErrNoError) {
+				log.Printf("[DEBUG] Config error detected %d %s", e.ErrorCode, e.ErrorMsg)
+				return errors.New(e.ErrorMsg)
+			}
+		}
+	}
+	log.Printf("[DEBUG] No config error detected")
+	return nil
+}
+
 func (c *Client) CreateTopic(t Topic) error {
 	broker, err := c.client.Controller()
 	if err != nil {

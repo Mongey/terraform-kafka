@@ -57,6 +57,14 @@ func (c *LazyClient) checkTLSConfig() error {
 	return conn.Handshake()
 }
 
+func (c *LazyClient) CheckConfigDiff(t Topic) error {
+	err := c.init()
+	if err != nil {
+		return err
+	}
+	return c.inner.CheckConfigDiff(t)
+}
+
 func (c *LazyClient) CreateTopic(t Topic) error {
 	err := c.init()
 	if err != nil {
