@@ -103,17 +103,19 @@ resource "kafka_topic" "logs" {
     "segment.ms"     = "20000"
     "cleanup.policy" = "compact"
   }
+  termination_protection = false
 }
 ```
 
 #### Properties
 
-| Property             | Description                                    |
-| -------------------- | ---------------------------------------------- |
-| `name`               | The name of the topic                          |
-| `partitions`         | The number of partitions the topic should have |
-| `replication_factor` | The number of replicas the topic should have   |
-| `config`             | A map of string [K/V attributes][topic-config] |
+| Property                 | Description                                    |
+| ------------------------ | ---------------------------------------------- |
+| `name`                   | The name of the topic                          |
+| `partitions`             | The number of partitions the topic should have |
+| `replication_factor`     | The number of replicas the topic should have   |
+| `config`                 | A map of string [K/V attributes][topic-config] |
+| `termination_protection` | Client side removal protection                 |
 
 
 #### Importing Existing Topics

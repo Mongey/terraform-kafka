@@ -49,6 +49,13 @@ func kafkaTopicResource() *schema.Resource {
 				Description: "A map of string k/v attributes.",
 				Elem:        schema.TypeString,
 			},
+			"termination_protection": {
+				Type:        schema.TypeBool,
+				Optional:    true,
+				Default:     false,
+				ForceNew:    false,
+				Description: `Prevents a Kafka topic from being deleted.`,
+			},
 		},
 	}
 }
@@ -211,6 +218,10 @@ func topicRefreshFunc(client *LazyClient, topic string, expected Topic) resource
 func topicDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	c := meta.(*LazyClient)
 	t := metaToTopic(d, meta)
+
+	if d.Get("termination_protection").(bool) {
+		return fmt.Errorf("Topic '%s' have termination_protection enabled and it prevent from deletion", t.Name)
+	}
 
 	err := c.DeleteTopic(t.Name)
 	if err != nil {
